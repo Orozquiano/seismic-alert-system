@@ -1,0 +1,54 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "sismos cercanos",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": [
+            "ayuda",
+            "cómo funciona",
+            "qué puedes hacer"
+          ]
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "NearbyQuakesIntent",
+          "slots": [],
+          "samples": [
+            "si hay sismos cerca",
+            "si hay temblores cerca",
+            "si hay terremotos cerca",
+            "sismos cerca",
+            "temblores cerca de aquí",
+            "terremotos cerca de aquí",
+            "últimos sismos",
+            "últimos temblores",
+            "sismos recientes",
+            "si tembló cerca",
+            "si se registró un sismo cerca",
+            "qué sismos se han registrado",
+            "sismos cerca de esta ubicación",
+            "si hay actividad sísmica cerca"
+          ]
+        }
+      ],
+      "types": []
+    }
+  }
+}

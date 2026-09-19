@@ -1,0 +1,48 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "es-US": {
+          "summary": "Consulta sismos ya registrados cerca de la dirección de tu Alexa.",
+          "examplePhrases": [
+            "Alexa, abre sismos cercanos",
+            "Alexa, pregúntale a sismos cercanos si hay temblores cerca",
+            "Alexa, pide a sismos cercanos los últimos sismos"
+          ],
+          "name": "Sismos Cercanos",
+          "description": "Informa sismos recientemente publicados cerca de la dirección configurada en tu Echo. No predice terremotos, no es un sistema de alerta temprana y no reemplaza al Servicio Geológico Colombiano ni a otros canales oficiales. Usa catálogos públicos del EMSC y del USGS."
+        }
+      },
+      "isAvailableWorldwide": false,
+      "testingInstructions": "1) Configura una dirección completa en el Echo. 2) Habilita el permiso de dirección. 3) Di: Alexa, abre sismos cercanos. La skill debe informar sismos publicados o indicar que no hay eventos en el radio configurado.",
+      "category": "WEATHER",
+      "distributionCountries": ["US", "CO"]
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "REPLACE_WITH_LAMBDA_ARN"
+        }
+      }
+    },
+    "manifestVersion": "1.0",
+    "permissions": [
+      {
+        "name": "alexa::devices:all:address:full:read"
+      }
+    ],
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "usesPersonalInfo": true,
+      "isExportCompliant": true,
+      "isChildDirected": false,
+      "containsAds": false,
+      "locales": {
+        "es-US": {
+          "privacyPolicyUrl": "https://example.com/sismos-cercanos/privacidad",
+          "termsOfUseUrl": "https://example.com/sismos-cercanos/terminos"
+        }
+      }
+    }
+  }
+}

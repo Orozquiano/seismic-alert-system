@@ -1,0 +1,15 @@
+{
+  "name": "sismos-cercanos-alexa",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Alexa skill that reports recently published earthquakes near the device address.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "query": "node scripts/query-nearby.js",
+    "simulate": "node scripts/simulate-alexa.js"
+  }
+}
