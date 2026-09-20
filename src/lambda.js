@@ -74,7 +74,7 @@ function permissionResponse() {
 
 /**
  * @function resolveLocation
- * @description Obtiene lat/lon: o coordenadas de prueba (solo scripts) o Device Address + Nominatim. No persiste la dirección.
+ * @description Obtiene lat/lon: o coordenadas de prueba (solo scripts) o Device Address + geocoder. No persiste la dirección.
  * @params {object} handlerInput - { requestEnvelope } con token y deviceId de Alexa.
  */
 async function resolveLocation(handlerInput) {
@@ -89,9 +89,11 @@ async function resolveLocation(handlerInput) {
   ]);
 
   if (!isUsableAddress(address)) {
-    const error = new Error("Incomplete device address");
-    error.code = "INCOMPLETE_ADDRESS";
-    throw error;
+    logger.warn("address_incomplete_using_bogota");
+    return {
+      location: defaultLocation(),
+      timeZone: timeZone || config.defaultTimezone,
+    };
   }
 
   const location = await geocodeAddress(address);
@@ -106,10 +108,15 @@ async function resolveLocation(handlerInput) {
 async function reportNearby(handlerInput) {
   const { location, timeZone } = await resolveLocation(handlerInput);
   const result = await findNearbyEarthquakes(location);
+  const locationNote =
+    location.source === "env" || location.source === "console-fallback"
+      ? strings.simulatorLocation
+      : "";
   const speech = nearbySpeech({
     events: result.events,
     query: result.query,
-    timeZone,
+    timeZone: timeZone,
+    locationNote: locationNote,
   });
   logger.info("speech_ready", {
     eventCount: result.events.length,
@@ -124,18 +131,32 @@ async function reportNearby(handlerInput) {
  * @params {Error} error - Error con code/status lanzado por adapters o Device Settings.
  */
 function errorResponse(error) {
-  logger.error("skill_error", { error: error.message, code: error.code || null });
-  if (error.code === "PERMISSION_DENIED" || error.status === 403) {
+  logger.error("skill_error", {
+    error: error.message,
+    code: error.code || null,
+    status: error.status || null,
+    sources: error.sourceStatus || null,
+  });
+  if (error.code === "PERMISSION_DENIED") {
     return permissionResponse();
   }
-  if (error.code === "INCOMPLETE_ADDRESS") {
+  if (error.code === "INCOMPLETE_ADDRESS" || error.code === "DEVICE_CONTEXT_MISSING") {
     return speakResponse(strings.incompleteAddress);
   }
   if (error.code === "GEOCODE_NOT_FOUND" || error.code === "GEOCODE_INVALID") {
     return speakResponse(strings.geocodeFailed);
   }
   if (error.code === "SOURCES_UNAVAILABLE") {
-    return speakResponse(strings.sourcesDown);
+    const status = error.sourceStatus || {};
+    const parts = [];
+    if (status.EMSC && status.EMSC.error) {
+      parts.push("EMSC " + String(status.EMSC.error).slice(0, 140));
+    }
+    if (status.USGS && status.USGS.error) {
+      parts.push("USGS " + String(status.USGS.error).slice(0, 140));
+    }
+    const detail = parts.length ? " Detalle: " + parts.join(". ") + "." : "";
+    return speakResponse(strings.sourcesDown + detail);
   }
   return speakResponse(strings.genericError);
 }

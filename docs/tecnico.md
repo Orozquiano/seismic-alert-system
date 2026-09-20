@@ -6,7 +6,8 @@
 |---|---|---|
 | EMSC | `https://www.seismicportal.eu/fdsnws/event/1/query` | Consulta FDSN JSON por radio (maxradius en grados) |
 | USGS | `https://earthquake.usgs.gov/fdsnws/event/1/query` | Consulta FDSN GeoJSON por `maxradiuskm` |
-| Nominatim | `https://nominatim.openstreetmap.org/search` | Geocodifica la dirección del Echo |
+| Open-Meteo | `https://geocoding-api.open-meteo.com/v1/search` | Geocodifica la ciudad del Echo (principal; funciona desde AWS) |
+| Nominatim | `https://nominatim.openstreetmap.org/search` | Respaldo de geocodificación; a menudo bloquea Lambda |
 | Alexa | Device Settings Address + timezone | Ubicación y zona horaria, con permiso |
 
 SGC, Google Earthquake Alerts y WebSocket EMSC no forman parte de este MVP.

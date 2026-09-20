@@ -23,7 +23,7 @@ function numberEnv(name, fallback) {
  * @function stringEnv
  * @description Lee una variable de entorno de texto y recorta espacios. Evita URLs o User-Agent vacíos.
  * @params {string} name - Nombre de la variable de entorno (por ejemplo USER_AGENT o una URL de API).
- * @params {string} fallback - Texto por defecto si la variable no está definida, para identificar el cliente ante EMSC, USGS y Nominatim.
+ * @params {string} fallback - Texto por defecto si la variable no está definida, para identificar el cliente ante EMSC, USGS, Open-Meteo y Nominatim.
  */
 function stringEnv(name, fallback) {
   const raw = process.env[name];
@@ -35,12 +35,16 @@ const config = {
   searchRadiusKm: numberEnv("SEARCH_RADIUS_KM", 250),
   minMagnitude: numberEnv("MIN_MAGNITUDE", 3),
   maxEventsToSpeak: numberEnv("MAX_EVENTS_TO_SPEAK", 3),
-  httpTimeoutMs: numberEnv("HTTP_TIMEOUT_MS", 3500),
+  httpTimeoutMs: numberEnv("HTTP_TIMEOUT_MS", 5000),
   userAgent: stringEnv(
     "USER_AGENT",
-    "SismosCercanosAlexa/1.0 (consulta de sismos publicados; no es alerta temprana)"
+    "SismosCercanosAlexa/1.0 (+https://developer.amazon.com)"
   ),
   nominatimUrl: stringEnv("NOMINATIM_URL", "https://nominatim.openstreetmap.org"),
+  openMeteoGeocodeUrl: stringEnv(
+    "OPEN_METEO_GEOCODE_URL",
+    "https://geocoding-api.open-meteo.com/v1/search"
+  ),
   emscFdsnUrl: stringEnv(
     "EMSC_FDSN_URL",
     "https://www.seismicportal.eu/fdsnws/event/1/query"
@@ -49,8 +53,12 @@ const config = {
     "USGS_FDSN_URL",
     "https://earthquake.usgs.gov/fdsnws/event/1/query"
   ),
-  defaultLat: numberEnv("DEFAULT_LAT", NaN),
-  defaultLon: numberEnv("DEFAULT_LON", NaN),
+  usgsFeedUrl: stringEnv(
+    "USGS_FEED_URL",
+    "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson"
+  ),
+  defaultLat: numberEnv("DEFAULT_LAT", 4.711),
+  defaultLon: numberEnv("DEFAULT_LON", -74.072),
   defaultTimezone: stringEnv("DEFAULT_TIMEZONE", "America/Bogota"),
   skillLocale: "es-US",
 };

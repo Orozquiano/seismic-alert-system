@@ -3,7 +3,7 @@
  * @description Adapter del Euro-Mediterranean Seismological Centre. Traduce el FDSN GeoJSON de SeismicPortal al modelo EarthquakeEvent y busca por círculo (lat, lon, radio en grados). Fuente near-real-time principal del MVP; no sustituye al SGC.
  */
 const { config } = require("../config");
-const { fetchJson } = require("../http");
+const { fetchJson, withQuery } = require("../http");
 const { kmToDegrees } = require("../geo/distance");
 const { isoHoursAgo, normalizeEvent, isValidEvent } = require("../quakes/normalize");
 const { logger } = require("../logger");
@@ -48,18 +48,19 @@ function mapEmscFeature(feature) {
  * @params {number} query.lookbackHours - Inicio de la ventana temporal (starttime).
  */
 async function searchNearby({ latitude, longitude, radiusKm, minMagnitude, lookbackHours }) {
-  const url = new URL(config.emscFdsnUrl);
-  url.searchParams.set("format", "json");
-  url.searchParams.set("lat", String(latitude));
-  url.searchParams.set("lon", String(longitude));
-  url.searchParams.set("maxradius", String(kmToDegrees(radiusKm)));
-  url.searchParams.set("minmag", String(minMagnitude));
-  url.searchParams.set("starttime", isoHoursAgo(lookbackHours));
-  url.searchParams.set("limit", "20");
-  url.searchParams.set("orderby", "time");
+  const url = withQuery(config.emscFdsnUrl, {
+    format: "json",
+    lat: latitude,
+    lon: longitude,
+    maxradius: kmToDegrees(radiusKm),
+    minmag: minMagnitude,
+    starttime: isoHoursAgo(lookbackHours),
+    limit: "20",
+    orderby: "time",
+  });
 
   logger.info("emsc_query", { latitude, longitude, radiusKm, minMagnitude });
-  const { body, elapsedMs } = await fetchJson(url.toString());
+  const { body, elapsedMs } = await fetchJson(url);
   const features = (body && body.features) || [];
   const events = features.map(mapEmscFeature).filter(isValidEvent);
   logger.info("emsc_ok", { elapsedMs, count: events.length });

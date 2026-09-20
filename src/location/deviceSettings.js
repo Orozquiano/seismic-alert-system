@@ -4,8 +4,20 @@
  */
 const { config } = require("../config");
 const { logger } = require("../logger");
+const { fetchResponse, withTimeout } = require("../http");
 
 const FULL_ADDRESS_PERMISSION = "read::alexa:device:all:address";
+
+/**
+ * @function system
+ * @description Lee context.System del envelope. Si falta, Device Address no se puede llamar.
+ * @params {object} handlerInput - Envoltorio con requestEnvelope de Alexa.
+ */
+function system(handlerInput) {
+  return handlerInput && handlerInput.requestEnvelope && handlerInput.requestEnvelope.context
+    ? handlerInput.requestEnvelope.context.System
+    : null;
+}
 
 /**
  * @function apiHost
@@ -13,7 +25,8 @@ const FULL_ADDRESS_PERMISSION = "read::alexa:device:all:address";
  * @params {object} handlerInput - Envoltorio con requestEnvelope de Alexa.
  */
 function apiHost(handlerInput) {
-  return handlerInput.requestEnvelope.context.System.apiEndpoint;
+  const sys = system(handlerInput);
+  return sys && sys.apiEndpoint;
 }
 
 /**
@@ -22,7 +35,8 @@ function apiHost(handlerInput) {
  * @params {object} handlerInput - Envoltorio con requestEnvelope de Alexa.
  */
 function deviceId(handlerInput) {
-  return handlerInput.requestEnvelope.context.System.device.deviceId;
+  const sys = system(handlerInput);
+  return sys && sys.device && sys.device.deviceId;
 }
 
 /**
@@ -31,44 +45,68 @@ function deviceId(handlerInput) {
  * @params {object} handlerInput - Envoltorio con requestEnvelope de Alexa.
  */
 function accessToken(handlerInput) {
-  return handlerInput.requestEnvelope.context.System.apiAccessToken;
+  const sys = system(handlerInput);
+  return sys && sys.apiAccessToken;
 }
 
 /**
  * @function getJsonSetting
- * @description Llama a Device Settings REST y traduce 403 a PERMISSION_DENIED para pedir consentimiento. Centraliza timeouts y cabeceras.
+ * @description Llama a Device Settings REST y traduce 403 a PERMISSION_DENIED para pedir consentimiento. El timeout va con Promise.race (el editor de Alexa-hosted no define AbortController).
  * @params {object} handlerInput - Envoltorio Alexa con apiEndpoint, deviceId y token.
  * @params {string} path - Ruta del setting (dirección o zona horaria) porque son recursos distintos de la misma API.
  */
 async function getJsonSetting(handlerInput, path) {
-  const url = `${apiHost(handlerInput)}${path}`;
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken(handlerInput)}`,
-      Accept: "application/json",
-      "User-Agent": config.userAgent,
-    },
-    signal: AbortSignal.timeout(config.httpTimeoutMs),
-  });
-
-  if (response.status === 403) {
-    const error = new Error("Device settings permission denied");
-    error.code = "PERMISSION_DENIED";
-    error.status = 403;
+  const host = apiHost(handlerInput);
+  const id = deviceId(handlerInput);
+  const token = accessToken(handlerInput);
+  if (!host || !id || !token) {
+    const error = new Error("Missing Alexa System.apiEndpoint, deviceId or token");
+    error.code = "DEVICE_CONTEXT_MISSING";
     throw error;
   }
 
-  if (response.status === 204 || response.status === 404) {
-    return null;
-  }
+  const url = `${host}${path}`;
 
-  if (!response.ok) {
-    const error = new Error(`Device settings HTTP ${response.status}`);
-    error.status = response.status;
+  try {
+    const timeoutMs = 2500;
+    const response = await withTimeout(
+      fetchResponse(url, {
+        headers: {
+          Authorization: "Bearer " + token,
+          Accept: "application/json",
+          "User-Agent": config.userAgent || "SismosCercanosAlexa/1.0",
+        },
+        timeoutMs: timeoutMs,
+      }),
+      timeoutMs,
+      "Device settings timeout for " + path
+    );
+
+    if (response.status === 403) {
+      const error = new Error("Device settings permission denied");
+      error.code = "PERMISSION_DENIED";
+      error.status = 403;
+      throw error;
+    }
+
+    if (response.status === 204 || response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      const error = new Error(`Device settings HTTP ${response.status}`);
+      error.code = "DEVICE_SETTINGS_FAILED";
+      error.status = response.status;
+      throw error;
+    }
+
+    return response.json();
+  } catch (error) {
+    if (!error.code) {
+      error.code = "DEVICE_SETTINGS_FAILED";
+    }
     throw error;
   }
-
-  return response.json();
 }
 
 /**
@@ -119,7 +157,7 @@ function defaultLocation() {
   return {
     latitude: config.defaultLat,
     longitude: config.defaultLon,
-    label: "ubicación de prueba",
+    label: "Bogotá, Colombia",
     query: "DEFAULT_LAT/DEFAULT_LON",
     source: "env",
   };

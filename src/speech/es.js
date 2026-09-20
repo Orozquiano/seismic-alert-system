@@ -40,7 +40,7 @@ function formatWhen(date, timeZone) {
       hour: "numeric",
       minute: "2-digit",
     }).format(date);
-  } catch {
+  } catch (error) {
     return date.toISOString();
   }
 }
@@ -99,9 +99,11 @@ function describeEvent(event, timeZone) {
  * @params {object} payload.query - Radio, magnitud mínima y horas, para el mensaje de “no hay eventos”.
  * @params {string} payload.timeZone - Zona horaria del dispositivo.
  */
-function nearbySpeech({ events, query, timeZone }) {
+function nearbySpeech({ events, query, timeZone, locationNote }) {
+  const prefix = locationNote ? locationNote + " " : "";
   if (!events.length) {
     return (
+      prefix +
       `No se registraron sismos de magnitud ${formatMagnitude(query.minMagnitude)} o superior ` +
       `en un radio de ${formatKm(query.radiusKm)} kilómetros durante las últimas ${query.lookbackHours} horas. ` +
       DISCLAIMER
@@ -110,7 +112,7 @@ function nearbySpeech({ events, query, timeZone }) {
 
   const top = events.slice(0, config.maxEventsToSpeak);
   if (top.length === 1) {
-    return `Se registró ${describeEvent(top[0], timeZone)}. ${DISCLAIMER}`;
+    return prefix + `Se registró ${describeEvent(top[0], timeZone)}. ${DISCLAIMER}`;
   }
 
   const first = `Se registraron ${top.length} sismos cercanos. El más cercano fue ${describeEvent(
@@ -122,7 +124,7 @@ function nearbySpeech({ events, query, timeZone }) {
     .map((event) => `El siguiente, ${describeEvent(event, timeZone)}`)
     .join(". ");
 
-  return `${first} ${rest}. ${DISCLAIMER}`;
+  return prefix + `${first} ${rest}. ${DISCLAIMER}`;
 }
 
 const strings = {
@@ -136,6 +138,8 @@ const strings = {
     "Para decirte sismos cercanos necesito permiso para usar la dirección de este dispositivo. Ábrelo en la aplicación Alexa y vuelve a intentarlo.",
   incompleteAddress:
     "La dirección de este dispositivo está incompleta. Agrégala en la aplicación Alexa, en la configuración del Echo, e inténtalo de nuevo.",
+  simulatorLocation:
+    "Como este dispositivo no tiene dirección configurada, consulto sismos cerca de Bogotá.",
   geocodeFailed:
     "No pude ubicar la dirección configurada en este dispositivo. Verifícala en la aplicación Alexa e inténtalo de nuevo.",
   sourcesDown:

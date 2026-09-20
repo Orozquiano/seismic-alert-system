@@ -139,19 +139,114 @@ test("EMSC adapter maps GeoJSON with standard lon,lat,depth", () => {
   assert.equal(event.depthKm, 60);
 });
 
+function mockHttps(handler) {
+  const https = require("https");
+  const originalRequest = https.request;
+  https.request = function (opts, callback) {
+    const url = "https://" + opts.hostname + opts.path;
+    const req = {
+      on: function (event, fn) {
+        if (event === "error") {
+          req._onError = fn;
+        }
+        return req;
+      },
+      setTimeout: function () {
+        return req;
+      },
+      destroy: function () {},
+      end: function () {
+        let result;
+        try {
+          result = handler(url);
+        } catch (error) {
+          if (req._onError) {
+            req._onError(error);
+          }
+          return;
+        }
+        const statusCode = result.status;
+        const body = result.text || "";
+        const res = {
+          statusCode: statusCode,
+          on: function (event, fn) {
+            if (event === "data" && body) {
+              fn(Buffer.from(body));
+            }
+            if (event === "end") {
+              fn();
+            }
+          },
+        };
+        callback(res);
+      },
+    };
+    return req;
+  };
+  return function restore() {
+    https.request = originalRequest;
+  };
+}
+
 test("fetchJson treats HTTP 204 as an empty feature collection", async () => {
-  const originalFetch = global.fetch;
-  global.fetch = async () => ({
-    ok: true,
-    status: 204,
-    text: async () => "",
-  });
+  const restore = mockHttps(() => ({ status: 204, text: "" }));
   try {
     const { fetchJson } = require("../src/http");
     const result = await fetchJson("https://example.test/events");
     assert.deepEqual(result.body.features, []);
     assert.equal(result.status, 204);
   } finally {
-    global.fetch = originalFetch;
+    restore();
+  }
+});
+
+test("city fallback maps Bogotá even with accents or extra text", () => {
+  const { cityFallback } = require("../src/location/geocode");
+  const hit = cityFallback({ city: "Bogotá D.C.", countryCode: "CO" });
+  assert.equal(hit.source, "city-fallback");
+  assert.ok(Math.abs(hit.latitude - 4.711) < 0.01);
+  assert.ok(Math.abs(hit.longitude + 74.072) < 0.01);
+});
+
+test("geocodeAddress uses Open-Meteo when it returns a hit", async () => {
+  const restore = mockHttps((url) => {
+    assert.match(String(url), /open-meteo/);
+    return {
+      status: 200,
+      text: JSON.stringify({
+        results: [
+          {
+            latitude: 4.6097,
+            longitude: -74.0817,
+            name: "Bogotá",
+            admin1: "Bogotá",
+            country: "Colombia",
+          },
+        ],
+      }),
+    };
+  });
+  try {
+    const { geocodeAddress } = require("../src/location/geocode");
+    const location = await geocodeAddress({ city: "Bogotá", countryCode: "CO" });
+    assert.equal(location.source, "open-meteo");
+    assert.equal(location.latitude, 4.6097);
+    assert.equal(location.longitude, -74.0817);
+  } finally {
+    restore();
+  }
+});
+
+test("geocodeAddress falls back to a Colombia city center when both geocoders fail", async () => {
+  const restore = mockHttps(() => {
+    throw new Error("geocoder blocked");
+  });
+  try {
+    const { geocodeAddress } = require("../src/location/geocode");
+    const location = await geocodeAddress({ city: "Medellín", countryCode: "CO" });
+    assert.equal(location.source, "city-fallback");
+    assert.ok(Math.abs(location.latitude - 6.244) < 0.01);
+  } finally {
+    restore();
   }
 });

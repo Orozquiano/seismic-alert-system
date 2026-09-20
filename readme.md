@@ -7,7 +7,7 @@ No es un sistema de alerta temprana. No predice terremotos. No inicia audio por 
 ## Qué hace el MVP
 
 1. Pide permiso para leer la **dirección del dispositivo** (el Echo no tiene GPS).
-2. Convierte esa dirección en coordenadas (Nominatim / OpenStreetMap).
+2. Convierte esa dirección en coordenadas (Open-Meteo, con Nominatim y un centro de ciudad colombiana como respaldo).
 3. Consulta en paralelo:
    - [EMSC FDSN-event](https://www.seismicportal.eu/fdsn-wsevent.html)
    - [USGS Earthquake Catalog](https://earthquake.usgs.gov/fdsnws/event/1/)
@@ -66,7 +66,7 @@ Ver [docs/privacidad.md](docs/privacidad.md).
 Usuario habla
     → Alexa Skill (es-US)
     → Device Address API
-    → Geocoder (Nominatim)
+    → Geocoder (Open-Meteo → Nominatim → ciudad CO)
     → EMSC + USGS (en paralelo)
     → Dedupe + distancia
     → Respuesta hablada
@@ -79,7 +79,7 @@ Cada fuente tiene un adapter (`src/adapters`). El modelo común está en `src/qu
 - No hay sirena automática.
 - La “ubicación de Alexa” es la dirección escrita en la app, no un GPS.
 - Los catálogos públicos llegan minutos después del origen, no en segundos.
-- Nominatim tiene política de uso: 1 petición por segundo y User-Agent identificable.
+- Nominatim suele bloquear IPs de AWS; por eso Open-Meteo es el geocoder principal.
 - Para certificación en Amazon hay que poner URLs reales de privacidad y términos en `skill-package/skill.json`.
 
 ## Roadmap posterior

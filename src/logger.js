@@ -10,12 +10,14 @@
  * @params {object} fields - Datos extra sin dirección de calle: ciudad, conteos, códigos de error. Se omite información innecesaria por privacidad.
  */
 function log(level, message, fields = {}) {
-  const entry = {
-    ts: new Date().toISOString(),
-    level,
-    message,
-    ...fields,
-  };
+  const entry = Object.assign(
+    {
+      ts: new Date().toISOString(),
+      level,
+      message,
+    },
+    fields
+  );
   const line = JSON.stringify(entry);
   if (level === "error") {
     console.error(line);

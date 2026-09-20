@@ -8,6 +8,7 @@ const usgsAdapter = require("../adapters/usgsAdapter");
 const { dedupeEvents } = require("./dedupe");
 const { haversineKm, hypocentralDistanceKm } = require("../geo/distance");
 const { logger } = require("../logger");
+const { allSettled } = require("../http");
 
 /**
  * @function withDistance
@@ -17,11 +18,10 @@ const { logger } = require("../logger");
  */
 function withDistance(location, event) {
   const distanceKm = haversineKm(location, event);
-  return {
-    ...event,
+  return Object.assign({}, event, {
     distanceKm,
     hypocentralDistanceKm: hypocentralDistanceKm(location, event),
-  };
+  });
 }
 
 /**
@@ -50,12 +50,12 @@ async function findNearbyEarthquakes(location, options = {}) {
   const query = {
     latitude: location.latitude,
     longitude: location.longitude,
-    radiusKm: options.radiusKm ?? config.searchRadiusKm,
-    minMagnitude: options.minMagnitude ?? config.minMagnitude,
-    lookbackHours: options.lookbackHours ?? config.lookbackHours,
+    radiusKm: options.radiusKm == null ? config.searchRadiusKm : options.radiusKm,
+    minMagnitude: options.minMagnitude == null ? config.minMagnitude : options.minMagnitude,
+    lookbackHours: options.lookbackHours == null ? config.lookbackHours : options.lookbackHours,
   };
 
-  const settled = await Promise.allSettled([
+  const settled = await allSettled([
     emscAdapter.searchNearby(query),
     usgsAdapter.searchNearby(query),
   ]);
@@ -68,16 +68,24 @@ async function findNearbyEarthquakes(location, options = {}) {
     const source = sources[index];
     if (result.status === "fulfilled") {
       sourceStatus[source] = { ok: true, count: result.value.length };
-      collected.push(...result.value);
+      collected.push.apply(collected, result.value);
     } else {
       sourceStatus[source] = { ok: false, error: result.reason.message };
+      logger.warn("source_failed", { source: source, error: result.reason.message });
     }
   });
 
-  if (collected.length === 0 && Object.values(sourceStatus).every((item) => !item.ok)) {
+  if (
+    collected.length === 0 &&
+    sourceStatus.EMSC &&
+    sourceStatus.USGS &&
+    !sourceStatus.EMSC.ok &&
+    !sourceStatus.USGS.ok
+  ) {
     const error = new Error("All earthquake sources failed");
     error.code = "SOURCES_UNAVAILABLE";
     error.sourceStatus = sourceStatus;
+    logger.error("sources_unavailable", { sources: sourceStatus });
     throw error;
   }
 

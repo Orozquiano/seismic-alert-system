@@ -23,10 +23,10 @@ function haversineKm(from, to) {
   const dLat = toRad(to.latitude - from.latitude);
   const dLon = toRad(to.longitude - from.longitude);
   const a =
-    Math.sin(dLat / 2) ** 2 +
+    Math.pow(Math.sin(dLat / 2), 2) +
     Math.cos(toRad(from.latitude)) *
       Math.cos(toRad(to.latitude)) *
-      Math.sin(dLon / 2) ** 2;
+      Math.pow(Math.sin(dLon / 2), 2);
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a));
 }
 
@@ -48,7 +48,7 @@ function kmToDegrees(km) {
 function hypocentralDistanceKm(from, event) {
   const epicentral = haversineKm(from, event);
   const depthKm = Number.isFinite(event.depthKm) ? event.depthKm : 0;
-  return Math.sqrt(epicentral ** 2 + depthKm ** 2);
+  return Math.sqrt(Math.pow(epicentral, 2) + Math.pow(depthKm, 2));
 }
 
 module.exports = {
