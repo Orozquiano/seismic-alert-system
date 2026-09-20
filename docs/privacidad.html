@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Política de privacidad — Sismos Cercanos</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 42rem; margin: 2rem auto; padding: 0 1.25rem; line-height: 1.5; color: #122; }
+    h1, h2 { font-family: system-ui, sans-serif; }
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.15rem; margin-top: 1.75rem; }
+  </style>
+</head>
+<body>
+  <h1>Política de privacidad de la skill Sismos Cercanos</h1>
+  <p>Última actualización: 20 de septiembre de 2026.</p>
+  <p>Esta política aplica a la skill de Alexa <strong>Sismos Cercanos</strong>. No es un sistema de alerta temprana y no predice terremotos.</p>
+
+  <h2>Qué datos usamos</h2>
+  <p>Si concedes el permiso de dirección del dispositivo, la skill lee la <strong>dirección configurada en tu Echo</strong> (no GPS). Ese permiso es <code>alexa::devices:all:address:full:read</code>.</p>
+  <p>También puede usarse la zona horaria del dispositivo para decir la hora local del sismo.</p>
+  <p>Amazon nos envía un identificador de dispositivo y un token temporal para esa petición. No pedimos nombre, correo, cuenta bancaria ni audio más allá de lo que Alexa ya procesa.</p>
+
+  <h2>Para qué los usamos</h2>
+  <p>Solo para geocodificar la dirección, consultar catálogos sísmicos públicos cerca de ese punto y responderte por voz en esa misma sesión.</p>
+
+  <h2>Almacenamiento</h2>
+  <p>No hay base de datos de usuarios en este MVP. La dirección se usa durante la petición y no se guarda para perfiles ni marketing.</p>
+  <p>Los registros técnicos (logs) pueden incluir ciudad, código de país, códigos de error y recuentos de eventos. No registramos calle ni número.</p>
+
+  <h2>Terceros</h2>
+  <ul>
+    <li>Amazon Alexa (Device Address y el propio servicio de la skill).</li>
+    <li>Open-Meteo y, como respaldo, Nominatim/OpenStreetMap: reciben texto de ciudad o dirección para obtener coordenadas.</li>
+    <li>EMSC y USGS: reciben coordenadas y un radio de búsqueda, no tu nombre.</li>
+  </ul>
+  <p>Cada uno trata los datos según su propia política.</p>
+
+  <h2>Permisos</h2>
+  <p>Puedes revocar el permiso de dirección en la Alexa app, en Ajustes de la skill. Sin ese permiso no podemos decir sismos “cerca de este Echo”.</p>
+
+  <h2>Contacto</h2>
+  <p>Para preguntas sobre esta política, usa el correo de soporte que aparece en la ficha de la skill en Amazon Developer.</p>
+</body>
+</html>
